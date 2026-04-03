@@ -103,6 +103,56 @@ Stop the **production** stack (`docker compose down`) first if ports **5000**, *
    - `npm run dev`
 2. Open `http://localhost:5173`
 
+## Deploy a live demo ($0)
+
+Stack: **Vercel (frontend)** + **free Postgres (Neon or Supabase)** + **free API host (Render)**. No paid services required for a small demo; free tiers may **sleep** when idle (first request after idle can be slow).
+
+### 1) Database (Neon — example)
+
+1. Create a project at [neon.tech](https://neon.tech) (free tier).
+2. Copy the **connection string** (PostgreSQL). It usually requires SSL.
+3. You will set `DATABASE_URL` and `DB_SSL=true` on the API host.
+
+### 2) API on Render (free web service)
+
+1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service** → connect **this GitHub repo**.
+2. **Root directory:** `server`
+3. **Runtime:** Node
+4. **Build command:** `npm ci` (or `npm install`)
+5. **Start command:** `npm start`
+6. **Environment variables:**
+
+   | Key | Value |
+   |-----|--------|
+   | `DATABASE_URL` | Paste Neon connection string |
+   | `DB_SSL` | `true` |
+   | `JWT_SECRET` | Long random string (generate locally; do not commit) |
+   | `PORT` | Often set automatically by Render; if empty, the app defaults internally |
+
+7. Deploy and copy the **HTTPS URL** (e.g. `https://quickcargo-api.onrender.com`). Check `GET /health`.
+
+**Note:** Render free services **spin down** after inactivity. The first browser request after sleep may take **30–60+ seconds**.
+
+### 3) Frontend on Vercel (Hobby)
+
+1. [vercel.com](https://vercel.com) → **Add New** → **Project** → import the same GitHub repo.
+2. **Root directory:** `client`
+3. **Framework preset:** Vite (or leave auto-detect).
+4. **Environment variables:**
+
+   | Key | Value |
+   |-----|--------|
+   | `VITE_API_URL` | Your Render API URL, e.g. `https://your-service.onrender.com` (no trailing slash) |
+
+5. Deploy. Open the **Vercel URL** — the app will call the API using `VITE_API_URL` ([client/src/services/api.js](client/src/services/api.js)).
+
+[`client/vercel.json`](client/vercel.json) adds SPA routing so deep links like `/dashboard` work on refresh.
+
+### 4) Smoke test
+
+- Sign up / log in, load **slots**, create a **booking**.
+- If the API “hangs” once, wait and retry (cold start).
+
 ## Key API Endpoints
 
 - `POST /auth/signup`
