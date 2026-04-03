@@ -107,11 +107,30 @@ Stop the **production** stack (`docker compose down`) first if ports **5000**, *
 
 Stack: **Vercel (frontend)** + **free Postgres (Neon or Supabase)** + **free API host (Render)**. No paid services required for a small demo; free tiers may **sleep** when idle (first request after idle can be slow).
 
-### 1) Database (Neon — example)
+### Supabase docs vs this repo (read this)
+
+Official snippets often assume **Next.js** (`page.tsx`, `@supabase/ssr`, `.env.local` with `NEXT_PUBLIC_*`). **This project is Vite + React + Express** with **JWT auth** and **PostgreSQL via `pg`**. You do **not** add those Next.js files here.
+
+**Use Supabase as Postgres only:** in the Supabase dashboard go to **Project Settings → Database** and copy the **URI** connection string (or use the “Transaction” pooler string for serverless hosts). Put it in **`DATABASE_URL`** on your **API** (Render), not in the Vite client. Set **`DB_SSL=true`**. No `@supabase/supabase-js` is required for that.
+
+**Optional later:** `@supabase/supabase-js` in the **client** only makes sense if you **replace** JWT auth with Supabase Auth — a large refactor. For a live demo, keep the current API auth.
+
+**Security:** never commit API keys or paste them in public chats. If keys were exposed, **rotate** them in Supabase (**Settings → API**).
+
+### 1) Database (Neon or Supabase)
+
+**Neon**
 
 1. Create a project at [neon.tech](https://neon.tech) (free tier).
 2. Copy the **connection string** (PostgreSQL). It usually requires SSL.
-3. You will set `DATABASE_URL` and `DB_SSL=true` on the API host.
+3. Set `DATABASE_URL` and `DB_SSL=true` on the API host.
+
+**Supabase (Postgres only)**
+
+1. Create a project at [supabase.com](https://supabase.com) (free tier).
+2. **Settings → Database** → copy the **Connection string** (URI format, replace `[YOUR-PASSWORD]` with your DB password).
+3. On Render (API service), set **`DATABASE_URL`** to that string and **`DB_SSL=true`**.
+4. Do **not** put Supabase service role keys in the browser; the React app only talks to **your Express API**.
 
 ### 2) API on Render (free web service)
 
@@ -124,7 +143,7 @@ Stack: **Vercel (frontend)** + **free Postgres (Neon or Supabase)** + **free API
 
    | Key | Value |
    |-----|--------|
-   | `DATABASE_URL` | Paste Neon connection string |
+   | `DATABASE_URL` | Neon or Supabase Postgres URI (see above) |
    | `DB_SSL` | `true` |
    | `JWT_SECRET` | Long random string (generate locally; do not commit) |
    | `PORT` | Often set automatically by Render; if empty, the app defaults internally |
